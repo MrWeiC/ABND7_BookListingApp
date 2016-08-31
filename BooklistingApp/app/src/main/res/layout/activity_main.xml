@@ -15,7 +15,8 @@
     <EditText
         android:id="@+id/bookname_edittext"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:maxLines="1"/>
 
     <Button
         android:id="@+id/search_book_button"
@@ -25,4 +26,6 @@
         android:hint="Please type the book name">
 
     </Button>
+
+
 </LinearLayout>
