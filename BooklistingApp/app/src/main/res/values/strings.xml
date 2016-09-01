@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">SearchBook</string>
+    <string name="please_type_the_book_name">Please type the book name</string>
+    <string name="search_book">Search Book</string>
 </resources>

@@ -1,9 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ListView xmlns:android="http://schemas.android.com/apk/res/android"
-          android:id="@+id/list"
-          android:layout_width="match_parent"
-          android:layout_height="match_parent"
-          android:drawSelectorOnTop="true"
-          android:orientation="vertical">
-
-</ListView>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
+<TextView
+    android:id="@+id/nodata_textview"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:visibility="gone"
+    android:text="No Result.\nPlease search something else or try later."
+    android:textStyle="bold"
+    android:layout_gravity="center_horizontal"
+    android:padding="32dp"/>
+    <ListView
+        android:id="@+id/list"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:drawSelectorOnTop="true"
+        android:orientation="vertical">
+    </ListView>
+</LinearLayout>

@@ -1,14 +1,17 @@
 package uno.weichen.booklistingapp;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.text.TextUtils;
 import android.util.Log;
-import android.widget.Adapter;
+import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -18,12 +21,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Created by weichen on 8/31/16.
@@ -48,7 +52,7 @@ public class SearchResultActivity extends AppCompatActivity {
      */
     final private String GOOGLE_BOOK_API_BASE_URL =
         "https://www.googleapis.com/books/v1/volumes?q=";
-    final private String FILTER = "&maxResults=5";
+    final private String FILTER = "&maxResults=20";
 
     private String googleBookApiUrl;
 
@@ -60,18 +64,23 @@ public class SearchResultActivity extends AppCompatActivity {
          * Get the searchKey from the MainActivity
          */
         Intent intent = getIntent();
-        String  searchKey = intent.getStringExtra(MainActivity.EXTRA_MESSAGE);
+        String searchKey = intent.getStringExtra(MainActivity.EXTRA_MESSAGE);
         Log.d("Search", "The passed searchKey value is: " + searchKey);
         Log.d("Search", "start the Async task");
 
         /**
          * Update the url
          */
+        try {
+            searchKey = URLEncoder.encode(searchKey, "utf-8");
+        } catch (UnsupportedEncodingException e) {
+            Log.e(LOG_TAG, "Encoding search Key error", e);
+        }
+
         googleBookApiUrl = GOOGLE_BOOK_API_BASE_URL + searchKey +
             FILTER;
         Log.d(LOG_TAG, googleBookApiUrl);
-        // dummy test code to make sure the list view will display something with the adapter.
-        // books.add(new Book("a","B","C","D","E","F"));
+
 
         /**
          * Start the AsyncTask for the query Arraylist<Book> books
@@ -79,12 +88,29 @@ public class SearchResultActivity extends AppCompatActivity {
         SearchAsyncTask task = new SearchAsyncTask();
         task.execute();
 
-       // set the adapter the book list
+        // set the adapter the book list
         bookAdapter = new BookAdapter(this, books);
         //bundle this adapter to the list view
         listView = (ListView) findViewById(R.id.list);
         //set the list view with the bookAdpater
         listView.setAdapter(bookAdapter);
+
+
+        /**
+         * click the list item, the user will go to the preview link if it has one
+         */
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Book book = (Book) parent.getItemAtPosition(position);
+                String url = book.getmPreviewLink();
+                if(!url.matches("")) {
+                    Intent i = new Intent(Intent.ACTION_VIEW);
+                    i.setData(Uri.parse(url));
+                    startActivity(i);
+                }
+            }
+        });
     }
 
     /**
@@ -115,19 +141,25 @@ public class SearchResultActivity extends AppCompatActivity {
                 Log.e(LOG_TAG, "Something wrong to make the Http Request", e);
             }
             ArrayList<Book> books = extractBookFromJason(jsonResponse);
-            Log.d(LOG_TAG, books.get(0).toString());
             return books;
         }
 
         @Override
         protected void onPostExecute(ArrayList<Book> books) {
-            if (bookAdapter == null) {
+            if (bookAdapter == null || books == null) {
+                //locate the NODATA TextView
+                TextView nodataTextview = (TextView)findViewById(R.id.nodata_textview);
+                nodataTextview.setVisibility(View.VISIBLE);
                 return;
             }
             updateUi(books);
         }
     }
 
+    /**
+     * To update ui in the asynctask
+     * @param booksList
+     */
     private void updateUi(ArrayList<Book> booksList) {
         bookAdapter.clear();
         bookAdapter.addAll(booksList);
@@ -156,13 +188,22 @@ public class SearchResultActivity extends AppCompatActivity {
                 if (volumeInfo.has("subtitle")) {
                     subTitle = volumeInfo.getString("subtitle");
                 }
+                /**
+                 * Get the first author
+                 */
                 String firstAuthor = "";
                 if (volumeInfo.has("authors")) {
                     firstAuthor = volumeInfo.getJSONArray("authors").getString(0);
                 }
+                /**
+                 * Only get the year
+                 */
                 String publishDate = "";
                 if (volumeInfo.has("publishedDate")) {
                     publishDate = volumeInfo.getString("publishedDate");
+                    if (publishDate.length() > 5) {
+                        publishDate = publishDate.substring(0, 4);
+                    }
                 }
                 String imageLink = "";
                 if (volumeInfo.has("imageLinks")) {
